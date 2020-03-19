@@ -2,7 +2,6 @@ language: java
 
 script:
   - ./gradlew build --scan -s
-  - ./gradlew test --info
 
 
 before_cache:
