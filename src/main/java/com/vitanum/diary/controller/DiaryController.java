@@ -3,6 +3,7 @@ package com.vitanum.diary.controller;
 import com.vitanum.diary.entitities.Diary;
 import com.vitanum.diary.entitities.DiaryEntry;
 import com.vitanum.diary.repository.DiaryRepository;
+import com.vitanum.diary.utils.DiaryEntryListUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,11 @@ public class DiaryController {
     private DiaryRepository diaryRepository;
 
     @PostMapping(path = "/{year}/{month}/{day}")
-    public ResponseEntity<Diary> createDiary(@PathVariable Integer year, @PathVariable Integer month, @PathVariable Integer day) {
+    // @formatter:off
+    public ResponseEntity<Diary> createDiary(@PathVariable Integer year,
+                                             @PathVariable Integer month,
+                                             @PathVariable Integer day) {
+    // @formatter:on
         log.info("POST diary (year: {}, month: {}, day: {})", year, month, day);
 
         LocalDate diaryDate = LocalDate.of(year, month, day);
@@ -37,7 +42,11 @@ public class DiaryController {
     }
 
     @GetMapping(path = "/{year}/{month}/{day}")
-    public Mono<ResponseEntity<Diary>> getDiary(@PathVariable Integer year, @PathVariable Integer month, @PathVariable Integer day) {
+    // @formatter:off
+    public Mono<ResponseEntity<Diary>> getDiary(@PathVariable Integer year,
+                                                @PathVariable Integer month,
+                                                @PathVariable Integer day) {
+    // @formatter:on
         log.info("GET diary (year: {}, month: {}, day: {})", year, month, day);
 
         Mono<Diary> diaryMono = getDiaryFromDate(year, month, day);
@@ -47,30 +56,29 @@ public class DiaryController {
     }
 
     @PostMapping(path = "/{year}/{month}/{day}/entries")
-    public Mono<ResponseEntity<Mono<Diary>>> createDiaryEntry(@PathVariable Integer year, @PathVariable Integer month, @PathVariable Integer day, @RequestBody DiaryEntry diaryEntry) {
+    // @formatter:off
+    public Mono<ResponseEntity<Mono<Diary>>> createDiaryEntry(@PathVariable Integer year,
+                                                              @PathVariable Integer month,
+                                                              @PathVariable Integer day,
+                                                              @RequestBody DiaryEntry diaryEntry) {
+    // @formatter:on
         log.info("ADD entry {} into diary (year: {}, month: {}, day: {})", diaryEntry, year, month, day);
 
         Mono<Diary> diaryMono = getDiaryFromDate(year, month, day);
 
         return diaryMono.map(diary -> {
-            addEntryIntoDiary(diaryEntry, diary);
+            DiaryEntryListUtils.addEntryIntoDiary(diaryEntry, diary);
             return new ResponseEntity<>(diaryRepository.save(diary), HttpStatus.CREATED
             );
         }).switchIfEmpty(Mono.just(new ResponseEntity<>(Mono.empty(), HttpStatus.BAD_REQUEST)));
     }
 
-    private void addEntryIntoDiary(@RequestBody DiaryEntry diaryEntry, Diary diary) {
-        List<DiaryEntry> oldList = diary.getDiaryEntries();
-
-        if (oldList != null) {
-            List<DiaryEntry> newList = new ArrayList<>(oldList);
-            newList.add(diaryEntry);
-            diary.setDiaryEntries(newList);
-        }
-    }
-
     @GetMapping(path = "/{year}/{month}/{day}/entries")
-    public Mono<ResponseEntity<List<DiaryEntry>>> getDiaryEntries(@PathVariable Integer year, @PathVariable Integer month, @PathVariable Integer day) {
+    // @formatter:off
+    public Mono<ResponseEntity<List<DiaryEntry>>> getDiaryEntries(@PathVariable Integer year,
+                                                                  @PathVariable Integer month,
+                                                                  @PathVariable Integer day) {
+    // @formatter:on
         log.info("GET entries from diary (year: {}, month: {}, day: {})", year, month, day);
         Mono<Diary> diaryMono = getDiaryFromDate(year, month, day);
 
@@ -79,13 +87,18 @@ public class DiaryController {
     }
 
     @PutMapping(path = "/{year}/{month}/{day}/entries")
-    public Mono<ResponseEntity<Diary>> updateDiaryEntry(@PathVariable Integer year, @PathVariable Integer month, @PathVariable Integer day, @RequestBody DiaryEntry diaryEntry) {
+    // @formatter:off
+    public Mono<ResponseEntity<Diary>> updateDiaryEntry(@PathVariable Integer year,
+                                                        @PathVariable Integer month,
+                                                        @PathVariable Integer day,
+                                                        @RequestBody DiaryEntry diaryEntry) {
         log.info("UPDATE entry {} into diary (year: {}, month: {}, day: {})", diaryEntry, year, month, day);
 
         Mono<Diary> diaryMono = getDiaryFromDate(year, month, day);
         return diaryMono.map(result -> this.overwriteEntryAndCreateResponse(result, diaryEntry))
-                .defaultIfEmpty(new ResponseEntity<>(new Diary(), HttpStatus.NOT_FOUND));
+                        .defaultIfEmpty(new ResponseEntity<>(new Diary(), HttpStatus.NOT_FOUND));
     }
+    // @formatter:on
 
     private ResponseEntity<Diary> overwriteEntryAndCreateResponse(Diary diary, DiaryEntry diaryEntry) {
         overwriteDiaryEntry(diary, diaryEntry);
@@ -109,25 +122,20 @@ public class DiaryController {
     }
 
     @DeleteMapping(path = "/{year}/{month}/{day}/entries/{diaryEntryTimestamp}")
-    public Mono<ResponseEntity<Mono<Diary>>> deleteDiaryEntry(@PathVariable Integer year, @PathVariable Integer month, @PathVariable Integer day, @PathVariable Long diaryEntryTimestamp) {
+    // @formatter:off
+    public Mono<ResponseEntity<Mono<Diary>>> deleteDiaryEntry(@PathVariable Integer year,
+                                                              @PathVariable Integer month,
+                                                              @PathVariable Integer day,
+                                                              @PathVariable Long diaryEntryTimestamp) {
+    // @formatter:on
         log.info("DELETE entry with unix epoch {} into diary (year: {}, month: {}, day: {})", diaryEntryTimestamp, year, month, day);
         Mono<Diary> diaryMono = getDiaryFromDate(year, month, day);
 
         return diaryMono.map(diary -> {
-            removeEntryFromDiary(diaryEntryTimestamp, diary);
+            DiaryEntryListUtils.removeEntryFromDiary(diaryEntryTimestamp, diary);
             return new ResponseEntity<>(diaryRepository.save(diary), HttpStatus.OK
             );
         }).switchIfEmpty(Mono.just(new ResponseEntity<>(Mono.empty(), HttpStatus.BAD_REQUEST)));
-    }
-
-    private void removeEntryFromDiary(@PathVariable Long diaryEntryTimestamp, Diary diary) {
-        List<DiaryEntry> oldList = diary.getDiaryEntries();
-
-        if (oldList != null) {
-            List<DiaryEntry> newList = new ArrayList<>(oldList);
-            newList.stream().filter(entry -> entry.getCreationTimestamp() == diaryEntryTimestamp).forEach(foundEntry -> newList.remove(foundEntry));
-            diary.setDiaryEntries(newList);
-        }
     }
 
     private Mono<Diary> getDiaryFromDate(Integer year, Integer month, Integer day) {
