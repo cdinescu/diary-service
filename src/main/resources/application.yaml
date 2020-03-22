@@ -2,11 +2,11 @@ spring:
   data:
     mongodb:
       authentication-database: admin
-      username: root
-      password: rootpassword
-      database: mongo-diary-database
-      port: 27017
-      host: 192.168.0.144
+      username: ${RDS_USERNAME}
+      password: ${RDS_PASSWORD}
+      database: ${RDS_DB_NAME}
+      port: ${RDS_PORT}
+      host: ${RDS_HOSTNAME}
 
 logging:
   level:
