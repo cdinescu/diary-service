@@ -1,17 +1,12 @@
-# Strongly recommend to set this property to "none" in a production environment!
-spring.jpa.hibernate.ddl-auto: update
 spring:
-  jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL57Dialect
-
-spring.datasource:
-  url: jdbc:mysql://${RDS_HOSTNAME}:${RDS_PORT}/${RDS_DB_NAME}
-  username: ${RDS_USERNAME}
-  password: ${RDS_PASSWORD}
-
-spring.datasource.hikari.initializationFailTimeout: 60000
+  data:
+    mongodb:
+      authentication-database: admin
+      username: root
+      password: rootpassword
+      database: mongo-diary-database
+      port: 27017
+      host: 192.168.0.144
 
 logging:
   level:

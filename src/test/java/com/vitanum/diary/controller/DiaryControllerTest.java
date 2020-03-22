@@ -2,213 +2,249 @@ package com.vitanum.diary.controller;
 
 import com.vitanum.diary.entitities.Diary;
 import com.vitanum.diary.entitities.DiaryEntry;
-import com.vitanum.diary.repository.DiaryEntryRepository;
 import com.vitanum.diary.repository.DiaryRepository;
-import org.junit.Before;
+import com.vitanum.diary.webtestclient.utils.WebTestClientUtils;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
+import static org.mockito.Mockito.when;
 
 
 /**
  * Test class for DiaryController.
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = RANDOM_PORT)
+@WebFluxTest(DiaryController.class)
+@DirtiesContext
 public class DiaryControllerTest {
+
+    public static final Diary EMPTY_DIARY = new Diary();
+    public static final LocalDate DIARY_DATE = LocalDate.of(1991, Month.SEPTEMBER, 9);
 
     @Autowired
     private WebTestClient client;
 
-    @Autowired
+    @MockBean
     private DiaryRepository diaryRepository;
 
-    @Autowired
-    private DiaryEntryRepository diaryEntryRepository;
-
-    @Before
-    public void setUp() {
-        diaryEntryRepository.deleteAll();
-        diaryRepository.deleteAll();
-    }
-
+    @DisplayName("Create a new diary")
     @Test
     public void createDiary() {
         // Arrange
-        Diary diary = new Diary(LocalDate.of(1991, Month.SEPTEMBER, 9));
+        Diary diary = createDiaryForTest();
 
         // Act and Assert
-        postAndVerifyDiary(diary, HttpStatus.OK);
+        WebTestClientUtils.postAndVerifyDiary(client, DIARY_DATE, HttpStatus.CREATED);
     }
 
+    @DisplayName("Create a new diary, but already present in DB")
     @Test
-    public void readDiary() {
+    public void createDiaryWhenDiaryAlreadyInDB() {
         // Arrange
-        Diary diary = new Diary(LocalDate.of(1991, Month.SEPTEMBER, 9));
-        Diary savedDiary = diaryRepository.save(diary);
+        Diary diary = createDiaryForTest();
+
+        when(diaryRepository.findById(DIARY_DATE)).thenReturn(Mono.just(diary));
 
         // Act and Assert
-        WebTestClient.BodyContentSpec andVerifyDiary = getAndVerifyDiary(savedDiary.getId(), HttpStatus.OK);
-        String expectedJson = String.format("{\"id\":%s,\"version\":0,\"diaryEntries\":[],\"date\":\"1991-09-09\"}", savedDiary.getId());
-        andVerifyDiary.json(expectedJson);
+        WebTestClientUtils.postAndVerifyDiary(client, DIARY_DATE, HttpStatus.CREATED);
     }
 
+    @DisplayName("Read diary.")
     @Test
-    public void readDiaryWithIncorrectId() {
-        // Act and Assert
-        getAndVerifyDiary(999999, HttpStatus.NOT_FOUND);
-    }
-
-    @Test
-    public void createDiaryEntry() {
+    public void readDiary_FoundInDatabase() {
         // Arrange
-        Diary diary = new Diary(LocalDate.of(1991, Month.SEPTEMBER, 9));
-        Diary savedDiary = diaryRepository.save(diary);
+        Diary diary = createDiaryForTest();
+
+        when(diaryRepository.findById(DIARY_DATE)).thenReturn(Mono.just(diary));
 
         // Act and Assert
-        postAndVerifyDiaryEntry(savedDiary.getId(), HttpStatus.OK);
+        WebTestClientUtils.getAndVerifyDiary(client, DIARY_DATE, HttpStatus.OK, diary);
     }
 
+    @DisplayName("Read a non existing diary")
     @Test
-    public void readDiaryEntry() {
+    public void readDiary_NotFoundInDatabase() {
         // Arrange
-        Diary diary = new Diary(LocalDate.of(1991, Month.SEPTEMBER, 9));
+        Diary diary = createDiaryForTest();
 
-        DiaryEntry diaryEntry = new DiaryEntry();
-        diaryEntry.setAmount(100.0);
-        diaryEntry.setCalories(50);
-        diaryEntry.setUnit("g");
-        diaryEntry.setDescription("Banana");
+        when(diaryRepository.findById(DIARY_DATE)).thenReturn(Mono.empty());
 
-        diary.addDiaryEntry(diaryEntry);
-        Diary savedDiary = diaryRepository.save(diary);
-
-        // Act & Assert
-        Integer savedEntryId = savedDiary.getDiaryEntries().iterator().next().getId();
-        getAndVerifyDiaryEntry(savedEntryId, HttpStatus.OK);
-    }
-
-    @Test
-    public void readNonExistingDiaryEntry() {
-        getAndVerifyDiaryEntry(99999, HttpStatus.NOT_FOUND);
-    }
-
-    @Test
-    public void createDiaryEntryInNonExistingDiary() {
         // Act and Assert
-        postAndVerifyDiaryEntry(9999, HttpStatus.BAD_REQUEST);
+        WebTestClientUtils.getAndVerifyDiary(client, DIARY_DATE, HttpStatus.NOT_FOUND, EMPTY_DIARY);
     }
 
-    @Test
-    public void updateDiaryEntry() {
+    @DisplayName("Read entries from a diary")
+    public void readDiaryEntries_DiaryFoundInDatabase() {
         // Arrange
-        Diary diary = new Diary(LocalDate.of(1991, Month.SEPTEMBER, 9));
+        Diary diary = createDiaryForTest();
+        DiaryEntry entry1 = createDiaryEntryForTest();
+        DiaryEntry entry2 = createDiaryEntryForTest();
 
-        DiaryEntry diaryEntry = new DiaryEntry();
-        diaryEntry.setAmount(100.0);
-        diaryEntry.setCalories(50);
-        diaryEntry.setUnit("g");
-        diaryEntry.setDescription("Banana");
+        List<DiaryEntry> entries = new ArrayList<>();
+        entries.add(entry1);
+        entries.add(entry2);
+        diary.setDiaryEntries(entries);
 
-        diary.addDiaryEntry(diaryEntry);
-        Diary savedDiary = diaryRepository.save(diary);
+        when(diaryRepository.findById(DIARY_DATE)).thenReturn(Mono.just(diary));
 
-        // Act
-        DiaryEntry newDiaryEntry = savedDiary.getDiaryEntries().iterator().next();
-        double newAmount = 200.0;
-        newDiaryEntry.setAmount(newAmount);
-
-        // Assert
-        putAndVerifyDiaryEntry(savedDiary.getId(), newDiaryEntry, HttpStatus.OK);
-        assertEquals(newAmount, savedDiary.getDiaryEntries().iterator().next().getAmount());
+        // Act and Assert
+        WebTestClientUtils.getAndVerifyDiaryEntries(client, DIARY_DATE, HttpStatus.OK, diary);
     }
 
-
+    @DisplayName("Read entries from a non existing diary")
     @Test
-    public void deleteDiaryEntry() {
-        // Arrange
-        Diary diary = new Diary(LocalDate.of(1991, Month.SEPTEMBER, 9));
-
-        DiaryEntry diaryEntry = new DiaryEntry();
-        diaryEntry.setAmount(100.0);
-        diaryEntry.setCalories(50);
-        diaryEntry.setUnit("g");
-        diaryEntry.setDescription("Banana");
-
-        diary.addDiaryEntry(diaryEntry);
-        Diary savedDiary = diaryRepository.save(diary);
-
-        // Act && Assert
-        deleteDiaryEntry(savedDiary.getId(), savedDiary.getDiaryEntries().iterator().next().getId());
+    public void readDiaryEntries_DiaryNotFoundInDatabase() {
+        // Act and Assert
+        WebTestClientUtils.getAndVerifyDiaryEntries(client, DIARY_DATE, HttpStatus.BAD_REQUEST, EMPTY_DIARY);
     }
 
-    private void postAndVerifyDiary(Diary diary, HttpStatus expectedStatus) {
-        client.post()
-                .uri("/diaries")
-                .exchange()
-                .expectStatus().isEqualTo(expectedStatus);
-    }
-
+    @DisplayName("Add entries to a diary")
     @Test
-    public void deleteNonExistingDiaryEntry() {
+    public void addEntryDiary_DiaryIsFoundInDatabase() {
         // Arrange
-        Diary diary = new Diary(LocalDate.of(1991, Month.SEPTEMBER, 9));
-        Diary savedDiary = diaryRepository.save(diary);
+        Diary diary = createDiaryForTest();
 
-        // Act && Assert
-        deleteDiaryEntry(savedDiary.getId(), 9999);
+        DiaryEntry oldEntry = createDiaryEntryForTest();
+        long creationTimestamp = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
+        oldEntry.setCreationTimestamp(creationTimestamp);
+
+        DiaryEntry newEntry = createDiaryEntryForTest();
+        newEntry.setCreationTimestamp(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
+        newEntry.setAmount(oldEntry.getAmount() * 2);
+
+        Diary expectedDiary = diary;
+        expectedDiary.setDiaryEntries(Arrays.asList(oldEntry, newEntry));
+
+        when(diaryRepository.findById(DIARY_DATE)).thenReturn(Mono.just(diary));
+
+        // Act and Assert
+        WebTestClientUtils.postDiaryEntryAndVerifyDiary(client, DIARY_DATE, HttpStatus.CREATED, newEntry, expectedDiary);
     }
 
-    private WebTestClient.BodyContentSpec getAndVerifyDiary(int diaryId, HttpStatus expectedStatus) {
-        return client.get()
-                .uri("/diaries/" + diaryId)
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isEqualTo(expectedStatus)
-                .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody();
+    @DisplayName("Add entries to a non existing diary")
+    @Test
+    public void addEntryDiary_DiaryIsNotFoundInDatabase() {
+        // Arrange
+        DiaryEntry newEntry = createDiaryEntryForTest();
+        newEntry.setCreationTimestamp(LocalDateTime.now().toEpochSecond(ZoneOffset.UTC));
+
+        Diary expectedDiary = EMPTY_DIARY;
+
+        // Act and Assert
+        WebTestClientUtils.postDiaryEntryAndVerifyDiary(client, DIARY_DATE, HttpStatus.BAD_REQUEST, newEntry, expectedDiary);
     }
 
-    private void postAndVerifyDiaryEntry(Integer diaryId, HttpStatus expectedStatus) {
-        client.post()
-                .uri("/diaries/" + diaryId)
-                .bodyValue(new DiaryEntry("Tomato", 100.0, "g", 50))
-                .exchange()
-                .expectStatus().isEqualTo(expectedStatus);
+    @DisplayName("Update existing entry")
+    @Test
+    public void updateEntryDiary_DiaryIsFoundInDatabase_DataEntryInDatabase() {
+        // Arrange
+        Diary diary = createDiaryForTest();
+
+        DiaryEntry oldEntry = createDiaryEntryForTest();
+        long creationTimestamp = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
+        oldEntry.setCreationTimestamp(creationTimestamp);
+
+        DiaryEntry newEntry = createDiaryEntryForTest();
+        newEntry.setCreationTimestamp(creationTimestamp);
+        newEntry.setAmount(oldEntry.getAmount() * 2);
+
+        Diary expectedDiary = diary;
+        expectedDiary.setDiaryEntries(Arrays.asList(newEntry));
+
+        when(diaryRepository.findById(DIARY_DATE)).thenReturn(Mono.just(diary));
+
+        // Act and Assert
+        WebTestClientUtils.putDiaryEntryAndVerifyDiary(client, DIARY_DATE, HttpStatus.OK, newEntry, expectedDiary);
     }
 
-    private WebTestClient.BodyContentSpec getAndVerifyDiaryEntry(int diaryEntryId, HttpStatus expectedStatus) {
-        return client.get()
-                .uri("/diaries/entries/" + diaryEntryId)
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isEqualTo(expectedStatus)
-                .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody();
+    @DisplayName("Update a non-existing entry")
+    @Test
+    public void updateEntryDiary_DiaryIsFoundInDatabase_DataEntryNotInDatabase() {
+        // Arrange
+        LocalDate diaryDate = LocalDate.of(1991, Month.SEPTEMBER, 9);
+        Diary diary = new Diary();
+        diary.setDate(diaryDate);
+
+        DiaryEntry oldEntry = createDiaryEntryForTest();
+        long creationTimestamp = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
+        oldEntry.setCreationTimestamp(creationTimestamp);
+
+        DiaryEntry newEntry = createDiaryEntryForTest();
+        newEntry.setCreationTimestamp(creationTimestamp);
+        newEntry.setAmount(oldEntry.getAmount() * 2);
+
+        Diary expectedDiary = diary;
+
+        when(diaryRepository.findById(diaryDate)).thenReturn(Mono.just(diary));
+
+        // Act and Assert
+        WebTestClientUtils.putDiaryEntryAndVerifyDiary(client, diaryDate, HttpStatus.OK, newEntry, expectedDiary);
     }
 
-    private void putAndVerifyDiaryEntry(Integer diaryId, DiaryEntry newDiaryEntry, HttpStatus expectedStatus) {
-        client.put()
-                .uri("/diaries/" + diaryId)
-                .bodyValue(newDiaryEntry)
-                .exchange()
-                .expectStatus().isEqualTo(expectedStatus);
+    @DisplayName("Delete existing entry")
+    @Test
+    public void deleteEntryDiary_DiaryIsFoundInDatabase() {
+        // Arrange
+        Diary diary = createDiaryForTest();
+
+        DiaryEntry oldEntry = createDiaryEntryForTest();
+        long creationTimestamp = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
+        oldEntry.setCreationTimestamp(creationTimestamp);
+
+        DiaryEntry newEntry = createDiaryEntryForTest();
+        newEntry.setCreationTimestamp(creationTimestamp);
+        newEntry.setAmount(oldEntry.getAmount() * 2);
+
+        Diary expectedDiary = diary;
+        expectedDiary.setDiaryEntries(new ArrayList<>());
+
+        when(diaryRepository.findById(DIARY_DATE)).thenReturn(Mono.just(diary));
+
+        // Act and Assert
+        WebTestClientUtils.deleteEntryAndVerifyDiary(client, DIARY_DATE, creationTimestamp, HttpStatus.OK, expectedDiary);
     }
 
-    private void deleteDiaryEntry(Integer diaryId, Integer diaryEntryId) {
-        client.delete()
-                .uri("/diaries/" + diaryId + "/entries/" + diaryEntryId)
-                .exchange().expectStatus().isEqualTo(HttpStatus.OK);
+    @DisplayName("Delete entry from non existing diary")
+    @Test
+    public void deleteEntryDiary_DiaryIsNotFoundInDatabase() {
+        // Arrange
+        long creationTimestamp = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
+
+        // Act and Assert
+        WebTestClientUtils.deleteEntryAndVerifyDiary(client, DIARY_DATE, creationTimestamp, HttpStatus.BAD_REQUEST, EMPTY_DIARY);
+    }
+
+    private Diary createDiaryForTest() {
+        Diary diary = new Diary();
+        diary.setDate(DIARY_DATE);
+
+        return diary;
+    }
+
+    private DiaryEntry createDiaryEntryForTest() {
+        DiaryEntry newEntry = new DiaryEntry();
+        newEntry.setDescription("Tomato");
+        newEntry.setCalories(100);
+        newEntry.setAmount(200.0);
+        newEntry.setUnit("g");
+
+        return newEntry;
     }
 }

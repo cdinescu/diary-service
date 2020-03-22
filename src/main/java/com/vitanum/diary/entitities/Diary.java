@@ -2,45 +2,24 @@ package com.vitanum.diary.entitities;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-import javax.persistence.*;
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
-@ToString
-@Entity
-@Table(name = "diaries")
+@Document("diaries")
 public class Diary {
-    @Id
-    @GeneratedValue
-    private Integer id;
-
-    @Version
-    private int version;
-
-    @OneToMany(mappedBy = "diary", cascade = {CascadeType.PERSIST, CascadeType.MERGE,
-            CascadeType.DETACH, CascadeType.REMOVE, CascadeType.REFRESH}, orphanRemoval = true, fetch = FetchType.EAGER)
-    private Set<DiaryEntry> diaryEntries = new HashSet<>();
-
+    @Field
     private LocalDate date;
 
+    @Field("diary_entry")
+    private List<DiaryEntry> diaryEntries;
+
     public Diary() {
+        this.diaryEntries = new ArrayList<>();
     }
-
-    public Diary(LocalDate date) {
-        this.date = date;
-    }
-
-    public void addDiaryEntry(DiaryEntry diaryEntry) {
-        this.diaryEntries.add(diaryEntry);
-    }
-
-    public void removeDiaryEntry(DiaryEntry diaryEntry) {
-        this.diaryEntries.remove(diaryEntry);
-    }
-
 }
