@@ -47,24 +47,26 @@ public class DiaryController {
     }
 
     @PostMapping(path = "/{year}/{month}/{day}/entries")
-    public ResponseEntity<Mono<Diary>> createDiaryEntry(@PathVariable Integer year, @PathVariable Integer month, @PathVariable Integer day, @RequestBody DiaryEntry diaryEntry) {
+    public Mono<ResponseEntity<Mono<Diary>>> createDiaryEntry(@PathVariable Integer year, @PathVariable Integer month, @PathVariable Integer day, @RequestBody DiaryEntry diaryEntry) {
         log.info("ADD entry {} into diary (year: {}, month: {}, day: {})", diaryEntry, year, month, day);
 
         Mono<Diary> diaryMono = getDiaryFromDate(year, month, day);
-        Diary diary = diaryMono.block();
 
-        if (diary != null) {
-            List<DiaryEntry> oldList = diary.getDiaryEntries();
+        return diaryMono.map(diary -> {
+            addEntryIntoDiary(diaryEntry, diary);
+            return new ResponseEntity<>(diaryRepository.save(diary), HttpStatus.CREATED
+            );
+        }).switchIfEmpty(Mono.just(new ResponseEntity<>(Mono.empty(), HttpStatus.BAD_REQUEST)));
+    }
 
-            if (oldList != null) {
-                List<DiaryEntry> newList = new ArrayList<>(oldList);
-                newList.add(diaryEntry);
-                diary.setDiaryEntries(newList);
-            }
-            return new ResponseEntity<>(diaryRepository.save(diary), HttpStatus.CREATED);
+    private void addEntryIntoDiary(@RequestBody DiaryEntry diaryEntry, Diary diary) {
+        List<DiaryEntry> oldList = diary.getDiaryEntries();
+
+        if (oldList != null) {
+            List<DiaryEntry> newList = new ArrayList<>(oldList);
+            newList.add(diaryEntry);
+            diary.setDiaryEntries(newList);
         }
-
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
     @GetMapping(path = "/{year}/{month}/{day}/entries")
@@ -107,23 +109,25 @@ public class DiaryController {
     }
 
     @DeleteMapping(path = "/{year}/{month}/{day}/entries/{diaryEntryTimestamp}")
-    public ResponseEntity<Mono<Diary>> deleteDiaryEntry(@PathVariable Integer year, @PathVariable Integer month, @PathVariable Integer day, @PathVariable Long diaryEntryTimestamp) {
+    public Mono<ResponseEntity<Mono<Diary>>> deleteDiaryEntry(@PathVariable Integer year, @PathVariable Integer month, @PathVariable Integer day, @PathVariable Long diaryEntryTimestamp) {
         log.info("DELETE entry with unix epoch {} into diary (year: {}, month: {}, day: {})", diaryEntryTimestamp, year, month, day);
         Mono<Diary> diaryMono = getDiaryFromDate(year, month, day);
-        Diary diary = diaryMono.block();
 
-        if (diary != null) {
-            List<DiaryEntry> oldList = diary.getDiaryEntries();
+        return diaryMono.map(diary -> {
+            removeEntryFromDiary(diaryEntryTimestamp, diary);
+            return new ResponseEntity<>(diaryRepository.save(diary), HttpStatus.OK
+            );
+        }).switchIfEmpty(Mono.just(new ResponseEntity<>(Mono.empty(), HttpStatus.BAD_REQUEST)));
+    }
 
-            if (oldList != null) {
-                List<DiaryEntry> newList = new ArrayList<>(oldList);
-                newList.stream().filter(entry -> entry.getCreationTimestamp() == diaryEntryTimestamp).forEach(foundEntry -> newList.remove(foundEntry));
-                diary.setDiaryEntries(newList);
-            }
-            return new ResponseEntity<>(diaryRepository.save(diary), HttpStatus.OK);
+    private void removeEntryFromDiary(@PathVariable Long diaryEntryTimestamp, Diary diary) {
+        List<DiaryEntry> oldList = diary.getDiaryEntries();
+
+        if (oldList != null) {
+            List<DiaryEntry> newList = new ArrayList<>(oldList);
+            newList.stream().filter(entry -> entry.getCreationTimestamp() == diaryEntryTimestamp).forEach(foundEntry -> newList.remove(foundEntry));
+            diary.setDiaryEntries(newList);
         }
-
-        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
     private Mono<Diary> getDiaryFromDate(Integer year, Integer month, Integer day) {
