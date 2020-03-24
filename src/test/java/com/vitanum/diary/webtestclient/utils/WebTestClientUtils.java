@@ -5,8 +5,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.time.LocalDate;
+
 public class WebTestClientUtils {
     public static final String BASE_URI = "/api/diaryEntries";
+
+    public static final String SEARCH_URI = "/api/diaryEntries/search/findByDate";
 
     private WebTestClientUtils() {
 
@@ -44,4 +48,15 @@ public class WebTestClientUtils {
                 .exchange().expectStatus().isEqualTo(expectedStatus);
     }
 
+    public static void getByDateAndVerifyDiaryEntry(WebTestClient client, HttpStatus expectedStatus, LocalDate diaryDate, int matchCount) {
+        client.get()
+                .uri(SEARCH_URI + "?date=" + diaryDate)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isEqualTo(expectedStatus)
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody()
+                .jsonPath("$.length()")
+                .isEqualTo(matchCount + 1); // the self link is also included
+    }
 }

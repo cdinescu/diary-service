@@ -53,6 +53,21 @@ public class DiaryControllerTest {
     }
 
     @Test
+    public void searchDiaryEntryByDate() {
+        // Arrange
+        DiaryEntry diaryEntry1 = TestUtils.createDiaryEntryForTest();
+        diaryEntry1.setDate(TestUtils.DIARY_DATE);
+        diaryEntry1 = diaryEntryRepository.save(diaryEntry1);
+
+        DiaryEntry diaryEntry2 = TestUtils.createDiaryEntryForTest();
+        diaryEntry2 = diaryEntryRepository.save(diaryEntry1);
+        diaryEntry2.setDate(TestUtils.DIARY_DATE.plusDays(20));
+
+        // Act  & Assert
+        WebTestClientUtils.getByDateAndVerifyDiaryEntry(client, HttpStatus.OK, TestUtils.DIARY_DATE, 1);
+    }
+
+    @Test
     public void updateDiaryEntry() throws CloneNotSupportedException {
         // Arrange
         DiaryEntry diaryEntry = TestUtils.createDiaryEntryForTest();
