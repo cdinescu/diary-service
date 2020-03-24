@@ -9,5 +9,5 @@ spring:
       default
 
 server:
-  port: 9090
+  port: 0
 

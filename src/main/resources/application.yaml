@@ -5,13 +5,12 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL57Dialect
-
-spring.datasource:
-  url: jdbc:mysql://192.168.0.144:3308/diary-db
-  username: stefan
-  password: wolfie
-
-spring.datasource.hikari.initializationFailTimeout: 60000
+  datasource:
+    url: jdbc:mysql://${RDS_HOSTNAME}:${RDS_PORT}/${RDS_DB_NAME}
+    username: ${RDS_USERNAME}
+    password: ${RDS_PASSWORD}
+    hikari:
+      initializationFailTimeout: 60000
 
 logging:
   level:
