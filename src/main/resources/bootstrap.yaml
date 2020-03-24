@@ -1,18 +1,13 @@
 spring:
   application:
     name: diary-service
+  data:
+    rest:
+      base-path: /api
   profiles:
     active:
       default
-  cloud:
-    config:
-      uri: http://config-server:8012
-      name: config-server
-      failFast: true
-      retry:
-        maxAttempts: 20
 
 server:
-  port: 0
-
+  port: 9090
 

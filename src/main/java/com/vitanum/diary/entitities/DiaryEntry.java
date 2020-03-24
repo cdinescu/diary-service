@@ -1,20 +1,32 @@
 package com.vitanum.diary.entitities;
 
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.mongodb.core.mapping.Field;
 
+import javax.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDate;
 
 @NoArgsConstructor
 @Getter
 @Setter
-@ToString
-@EqualsAndHashCode
-public class DiaryEntry {
+@Entity
+@Table(name = "diary_entries")
+public class DiaryEntry implements Cloneable {
+    @Id
+    @GeneratedValue
+    private Integer id;
+
+    @Version
+    private int version;
+
+    private LocalDate date;
     private String description;
     private Double amount;
     private String unit;
     private Integer calories;
-    private long creationTimestamp;
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
 }

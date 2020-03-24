@@ -1,6 +1,5 @@
 package com.vitanum.diary.utils;
 
-import com.vitanum.diary.entitities.Diary;
 import com.vitanum.diary.entitities.DiaryEntry;
 
 import java.time.LocalDate;
@@ -14,19 +13,13 @@ public class TestUtils {
 
     }
 
-    public static Diary createDiaryForTest() {
-        Diary diary = new Diary();
-        diary.setDate(DIARY_DATE);
-
-        return diary;
-    }
-
     public static DiaryEntry createDiaryEntryForTest() {
         DiaryEntry newEntry = new DiaryEntry();
         newEntry.setDescription("Tomato");
         newEntry.setCalories(100);
         newEntry.setAmount(AMOUNT);
         newEntry.setUnit("g");
+        newEntry.setDate(DIARY_DATE);
 
         return newEntry;
     }

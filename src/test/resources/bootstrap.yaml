@@ -4,3 +4,6 @@ spring:
       enabled: false
     discovery:
       enabled: false
+  data:
+    rest:
+      base-path: /api

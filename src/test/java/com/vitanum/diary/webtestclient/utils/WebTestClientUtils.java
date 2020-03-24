@@ -1,81 +1,47 @@
 package com.vitanum.diary.webtestclient.utils;
 
-import com.vitanum.diary.entitities.Diary;
 import com.vitanum.diary.entitities.DiaryEntry;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import java.time.LocalDate;
-import java.util.List;
-
 public class WebTestClientUtils {
-    private static final String BASE_URL = "/diaries/";
+    public static final String BASE_URI = "/api/diaryEntries";
 
     private WebTestClientUtils() {
 
     }
 
-    public static void postAndVerifyDiary(WebTestClient client, LocalDate diaryDate, HttpStatus expectedStatus) {
+    public static void postAndVerifyDiaryEntry(WebTestClient client, HttpStatus expectedStatus, DiaryEntry diaryEntry) {
         client.post()
-                .uri(constructUrlFromBaseUrlAndDate(diaryDate))
+                .uri(BASE_URI)
+                .bodyValue(diaryEntry)
                 .exchange()
                 .expectStatus().isEqualTo(expectedStatus);
     }
 
-    public static void getAndVerifyDiary(WebTestClient client, LocalDate diaryDate, HttpStatus expectedStatus, Diary expectedResult) {
-        client.get()
-                .uri(constructUrlFromBaseUrlAndDate(diaryDate))
+    public static WebTestClient.BodyContentSpec getAndVerifyDiaryEntry(WebTestClient client, int diaryEntryId, HttpStatus expectedStatus) {
+        return client.get()
+                .uri(BASE_URI + "/" + diaryEntryId)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isEqualTo(expectedStatus)
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(Diary.class)
-                .value(diary -> expectedResult.equals(diary));
+                .expectBody();
     }
 
-    public static void getAndVerifyDiaryEntries(WebTestClient client, LocalDate diaryDate, HttpStatus expectedStatus, Diary expectedResult) {
-        client.get()
-                .uri(constructUrlFromBaseUrlAndDate(diaryDate) + "/entries")
-                .accept(MediaType.APPLICATION_JSON)
-                .exchange()
-                .expectStatus().isEqualTo(expectedStatus)
-                .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(List.class)
-                .value(result -> expectedResult.getDiaryEntries().equals(result));
-    }
-
-    public static void postDiaryEntryAndVerifyDiary(WebTestClient client, LocalDate diaryDate, HttpStatus expectedStatus, DiaryEntry newDiaryEntry, Diary expectedResult) {
-        client.post()
-                .uri(constructUrlFromBaseUrlAndDate(diaryDate) + "/entries")
-                .bodyValue(newDiaryEntry)
-                .exchange()
-                .expectStatus().isEqualTo(expectedStatus)
-                .expectBody(Diary.class)
-                .value(diary -> expectedResult.equals(diary));
-    }
-
-    public static void putDiaryEntryAndVerifyDiary(WebTestClient client, LocalDate diaryDate, HttpStatus expectedStatus, DiaryEntry newDiaryEntry, Diary expectedResult) {
+    public static void putAndVerifyDiaryEntry(WebTestClient client, Integer diaryEntryId, DiaryEntry newDiaryEntry, HttpStatus expectedStatus) {
         client.put()
-                .uri(constructUrlFromBaseUrlAndDate(diaryDate) + "/entries")
+                .uri(BASE_URI + "/" + diaryEntryId)
                 .bodyValue(newDiaryEntry)
                 .exchange()
-                .expectStatus().isEqualTo(expectedStatus)
-                .expectBody(Diary.class)
-                .value(diary -> expectedResult.equals(diary));
+                .expectStatus().isEqualTo(expectedStatus);
     }
 
-    public static void deleteEntryAndVerifyDiary(WebTestClient client, LocalDate diaryDate, long creationTimestamp, HttpStatus expectedStatus, Diary expectedResult) {
+    public static void deleteDiaryEntry(WebTestClient client, Integer diaryEntryId, HttpStatus expectedStatus) {
         client.delete()
-                .uri(constructUrlFromBaseUrlAndDate(diaryDate) + "/entries/" + creationTimestamp)
-                .exchange()
-                .expectStatus().isEqualTo(expectedStatus)
-                .expectBody(Diary.class)
-                .value(diary -> expectedResult.equals(diary));
+                .uri(BASE_URI + "/" + diaryEntryId)
+                .exchange().expectStatus().isEqualTo(expectedStatus);
     }
 
-
-    private static String constructUrlFromBaseUrlAndDate(LocalDate date) {
-        return BASE_URL + date.getYear() + "/" + date.getMonth().getValue() + "/" + date.getDayOfMonth();
-    }
 }

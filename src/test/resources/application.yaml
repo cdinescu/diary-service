@@ -1,0 +1,24 @@
+# Strongly recommend to set this property to "none" in a production environment!
+spring.jpa.hibernate.ddl-auto: create-drop
+
+spring:
+  database: h2
+  console: true
+  path: /h2
+
+datasource:
+  platform: h2
+  url: jdbc:h2://localhost:9090/h2
+  username: sa
+  password: 1234
+  driverClassName: org.h2.Driver
+
+
+logging:
+  level:
+    root: INFO
+    com.vitanum: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+
