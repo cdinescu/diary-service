@@ -1,6 +1,7 @@
 package com.vitanum.diary.repository;
 
 import com.vitanum.diary.entitities.DiaryEntry;
+import com.vitanum.diary.utils.TestUtils;
 import org.junit.Before;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -10,6 +11,9 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.Month;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,6 +58,29 @@ public class DiaryEntryRepositoryTest {
         // Assert
         assertTrue(foundDiaryEntryById.isPresent());
         assertDiaryEntryEquals(diaryEntry, foundDiaryEntryById.get());
+    }
+
+    @Test
+    public void findByDate() {
+        // Arrange
+        DiaryEntry diaryEntry1 = createDiaryEntry();
+        diaryEntry1.setDate(TestUtils.DIARY_DATE);
+
+        DiaryEntry diaryEntry2 = createDiaryEntry();
+        diaryEntry2.setDate(TestUtils.DIARY_DATE);
+
+        DiaryEntry diaryEntry3 = createDiaryEntry();
+        diaryEntry3.setDate(LocalDate.of(2020, Month.SEPTEMBER, 9));
+
+        diaryEntryRepository.save(diaryEntry1);
+        diaryEntryRepository.save(diaryEntry2);
+        diaryEntryRepository.save(diaryEntry3);
+
+        // Act
+        List<DiaryEntry> byDate = diaryEntryRepository.findByDate(TestUtils.DIARY_DATE);
+
+        // Assert
+        assertEquals(2, byDate.size());
     }
 
     public void update() {
