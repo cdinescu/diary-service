@@ -24,6 +24,7 @@ public class DiaryEntry implements Cloneable {
     private Double amount;
     private String unit;
     private Integer calories;
+    private String fdcId;
 
     @Override
     public Object clone() throws CloneNotSupportedException {

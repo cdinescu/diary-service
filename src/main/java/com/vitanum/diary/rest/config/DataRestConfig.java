@@ -32,7 +32,6 @@ public class DataRestConfig implements RepositoryRestConfigurer {
         List<Class> entityClasses = new ArrayList<>();
 
         entities.stream().forEach(entityType -> {
-            System.out.println(entityType.getJavaType());
             entityClasses.add(entityType.getJavaType());
         });
 
