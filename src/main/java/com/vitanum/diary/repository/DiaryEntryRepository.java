@@ -10,5 +10,6 @@ import java.util.List;
 
 public interface DiaryEntryRepository extends JpaRepository<DiaryEntry, Integer> {
 
-    List<DiaryEntry> findByDate(@RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date);
+    List<DiaryEntry> findByUsernameAndDate(@RequestParam("username") String username,
+                                           @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date);
 }

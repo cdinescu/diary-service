@@ -20,6 +20,8 @@ public class TestUtils {
         newEntry.setAmount(AMOUNT);
         newEntry.setUnit("g");
         newEntry.setDate(DIARY_DATE);
+        newEntry.setUsername("test_username");
+        newEntry.setFdcId("09091991");
 
         return newEntry;
     }

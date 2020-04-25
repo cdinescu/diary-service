@@ -8,9 +8,11 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import java.time.LocalDate;
 
 public class WebTestClientUtils {
+    public static final String USERNAME = "cristina";
+
     public static final String BASE_URI = "/api/diaryEntries";
 
-    public static final String SEARCH_URI = "/api/diaryEntries/search/findByDate";
+    public static final String SEARCH_URI = "/api/diaryEntries/search/findByUsernameAndDate";
 
     private WebTestClientUtils() {
 
@@ -50,7 +52,7 @@ public class WebTestClientUtils {
 
     public static void getByDateAndVerifyDiaryEntry(WebTestClient client, HttpStatus expectedStatus, LocalDate diaryDate, int matchCount) {
         client.get()
-                .uri(SEARCH_URI + "?date=" + diaryDate)
+                .uri(SEARCH_URI + "?date=" + diaryDate + "&username=" + USERNAME)
                 .accept(MediaType.APPLICATION_JSON)
                 .exchange()
                 .expectStatus().isEqualTo(expectedStatus)

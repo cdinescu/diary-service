@@ -2,12 +2,12 @@ package com.vitanum.diary.repository;
 
 import com.vitanum.diary.entitities.DiaryEntry;
 import com.vitanum.diary.utils.TestUtils;
-import org.junit.Before;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +16,7 @@ import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
+import static com.vitanum.diary.webtestclient.utils.WebTestClientUtils.USERNAME;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED;
 
@@ -25,14 +26,10 @@ import static org.springframework.transaction.annotation.Propagation.NOT_SUPPORT
 @RunWith(SpringRunner.class)
 @Transactional(propagation = NOT_SUPPORTED)
 @DataJpaTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class DiaryEntryRepositoryTest {
     @Autowired
     private DiaryEntryRepository diaryEntryRepository;
-
-    @Before
-    public void setUp() {
-        diaryEntryRepository.deleteAll();
-    }
 
     @Test
     public void create() {
@@ -61,13 +58,15 @@ public class DiaryEntryRepositoryTest {
     }
 
     @Test
-    public void findByDate() {
+    public void findByUsernameAndDate_UsernameMatches() {
         // Arrange
         DiaryEntry diaryEntry1 = createDiaryEntry();
         diaryEntry1.setDate(TestUtils.DIARY_DATE);
+        diaryEntry1.setUsername(USERNAME);
 
         DiaryEntry diaryEntry2 = createDiaryEntry();
         diaryEntry2.setDate(TestUtils.DIARY_DATE);
+        diaryEntry2.setUsername(USERNAME);
 
         DiaryEntry diaryEntry3 = createDiaryEntry();
         diaryEntry3.setDate(LocalDate.of(2020, Month.SEPTEMBER, 9));
@@ -77,10 +76,36 @@ public class DiaryEntryRepositoryTest {
         diaryEntryRepository.save(diaryEntry3);
 
         // Act
-        List<DiaryEntry> byDate = diaryEntryRepository.findByDate(TestUtils.DIARY_DATE);
+        List<DiaryEntry> byDate = diaryEntryRepository.findByUsernameAndDate(USERNAME, TestUtils.DIARY_DATE);
 
         // Assert
         assertEquals(2, byDate.size());
+    }
+
+    @Test
+    public void findByUsernameAndDate_UsernameNoMatch() {
+        // Arrange
+        String username = "random";
+        DiaryEntry diaryEntry1 = createDiaryEntry();
+        diaryEntry1.setDate(TestUtils.DIARY_DATE);
+        diaryEntry1.setUsername(username);
+
+        DiaryEntry diaryEntry2 = createDiaryEntry();
+        diaryEntry2.setDate(TestUtils.DIARY_DATE);
+        diaryEntry2.setUsername(username);
+
+        DiaryEntry diaryEntry3 = createDiaryEntry();
+        diaryEntry3.setDate(LocalDate.of(2020, Month.SEPTEMBER, 9));
+
+        diaryEntryRepository.save(diaryEntry1);
+        diaryEntryRepository.save(diaryEntry2);
+        diaryEntryRepository.save(diaryEntry3);
+
+        // Act
+        List<DiaryEntry> byDate = diaryEntryRepository.findByUsernameAndDate("cristina", TestUtils.DIARY_DATE);
+
+        // Assert
+        assertEquals(0, byDate.size());
     }
 
     public void update() {
