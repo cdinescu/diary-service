@@ -1,5 +1,5 @@
 # diary-service
-This service provides a REst API through which food diary entries (stored in a MySQL database) are modified (CRUD operations). 
+This service provides a REST API through which food diary entries (stored in a MySQL database) are modified (CRUD operations). 
 The API is exposed through HATEOAS links (provided by Spring Data Rest)
 
 Technology stack:
