@@ -17,7 +17,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.vitanum.diary.webtestclient.utils.WebTestClientUtils.USERNAME;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED;
 
 /**
@@ -58,7 +61,7 @@ public class DiaryEntryRepositoryTest {
     }
 
     @Test
-    public void findByUsernameAndDate_UsernameMatches() {
+    public void findByUsernameAndDateUsernameMatches() {
         // Arrange
         DiaryEntry diaryEntry1 = createDiaryEntry();
         diaryEntry1.setDate(TestUtils.DIARY_DATE);
@@ -83,7 +86,7 @@ public class DiaryEntryRepositoryTest {
     }
 
     @Test
-    public void findByUsernameAndDate_UsernameNoMatch() {
+    public void findByUsernameAndDateUsernameNoMatch() {
         // Arrange
         String username = "random";
         DiaryEntry diaryEntry1 = createDiaryEntry();
@@ -124,7 +127,7 @@ public class DiaryEntryRepositoryTest {
         DiaryEntry actualDiaryEntry = foundDiaryEntryById.get();
 
         assertEquals(1, actualDiaryEntry.getVersion());
-        assertEquals(200.0, actualDiaryEntry.getAmount());
+        assertEquals(Double.valueOf(200.0), actualDiaryEntry.getAmount());
         assertDiaryEntryEquals(diaryEntry, actualDiaryEntry);
     }
 
@@ -168,7 +171,7 @@ public class DiaryEntryRepositoryTest {
         // Get the updated entity from the database and verify its new sate
         DiaryEntry updatedEntity = diaryEntryRepository.findById(savedEntity.getId()).get();
         assertEquals(1, updatedEntity.getVersion());
-        assertEquals(200.0, updatedEntity.getAmount());
+        assertEquals(Double.valueOf(200.0), updatedEntity.getAmount());
     }
 
     private DiaryEntry createDiaryEntry() {
