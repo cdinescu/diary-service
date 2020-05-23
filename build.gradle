@@ -66,3 +66,13 @@ if (hasProperty('buildScan')) {
         termsOfServiceAgree = 'yes'
     }
 }
+jacocoTestReport {
+    reports {
+        xml.enabled true
+		xml.destination file("${buildDir}/reports/jacoco/report.xml")
+        csv.enabled false
+        html.enabled false
+    }
+}
+
+check.dependsOn jacocoTestReport
