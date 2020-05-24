@@ -4,9 +4,12 @@ script:
   - ./gradlew build --scan -s
   - ./gradlew check
 
-
-after_success:
-  - bash <(curl -Ls https://coverage.codacy.com/get.sh) report -l Java -r build/reports/jacoco/report.xml
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: bash deploy.sh
+  on:
+    branch: master
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
