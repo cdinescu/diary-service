@@ -14,7 +14,7 @@ import java.util.Set;
 @Component
 public class DataRestConfig implements RepositoryRestConfigurer {
 
-    private EntityManager entityManager;
+    private final EntityManager entityManager;
 
     @Autowired
     public DataRestConfig(EntityManager entityManager) {
@@ -31,9 +31,7 @@ public class DataRestConfig implements RepositoryRestConfigurer {
 
         List<Class> entityClasses = new ArrayList<>();
 
-        entities.stream().forEach(entityType -> {
-            entityClasses.add(entityType.getJavaType());
-        });
+        entities.stream().forEach(entityType -> entityClasses.add(entityType.getJavaType()));
 
         config.exposeIdsFor(entityClasses.toArray(new Class[0]));
     }
