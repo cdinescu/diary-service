@@ -31,7 +31,7 @@ public class DataRestConfig implements RepositoryRestConfigurer {
 
         List<Class> entityClasses = new ArrayList<>();
 
-        entities.stream().forEach(entityType -> entityClasses.add(entityType.getJavaType()));
+        entities.forEach(entityType -> entityClasses.add(entityType.getJavaType()));
 
         config.exposeIdsFor(entityClasses.toArray(new Class[0]));
     }
