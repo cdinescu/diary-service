@@ -4,24 +4,16 @@ import com.vitanum.diary.entitities.DiaryEntry;
 import com.vitanum.diary.repository.DiaryEntryRepository;
 import com.vitanum.diary.utils.TestUtils;
 import com.vitanum.diary.webtestclient.utils.WebTestClientUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-import java.util.Map;
-
 import static com.vitanum.diary.webtestclient.utils.WebTestClientUtils.USERNAME;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 
@@ -38,28 +30,13 @@ public class DiaryControllerTest {
     @Autowired
     private DiaryEntryRepository diaryEntryRepository;
 
-    @MockBean
-    private JwtDecoder jwtDecoder;
-
-    private final Jwt myJwt = jwt("token");
-
-    @BeforeEach
-    void setUp() {
-        when(this.jwtDecoder.decode(anyString())).thenReturn(this.myJwt);
-    }
-
-    private Jwt jwt(String tokenValue) {
-        return new Jwt(tokenValue, null, null,
-                Map.of("alg", "none"), Map.of("sub", "cristina"));
-    }
-
     @Test
-    public void createDiaryUnauthenticated() {
+    public void createDiaryEntry() {
         // Arrange
         DiaryEntry diaryEntry = TestUtils.createDiaryEntryForTest();
 
         // Act & Arrange
-        WebTestClientUtils.postAndVerifyDiaryEntry(client, diaryEntry);
+        WebTestClientUtils.postAndVerifyDiaryEntry(client, HttpStatus.CREATED, diaryEntry);
     }
 
     @Test
@@ -69,17 +46,7 @@ public class DiaryControllerTest {
         diaryEntry = diaryEntryRepository.save(diaryEntry);
 
         // Act  & Assert
-        WebTestClientUtils.getAndVerifyDiaryEntry(client, myJwt, diaryEntry.getId(), HttpStatus.OK);
-    }
-
-    @Test
-    public void readDiaryEntryUnauthenticated() {
-        // Arrange
-        DiaryEntry diaryEntry = TestUtils.createDiaryEntryForTest();
-        diaryEntry = diaryEntryRepository.save(diaryEntry);
-
-        // Act  & Assert
-        WebTestClientUtils.getAndVerifyDiaryEntry(client, diaryEntry.getId());
+        WebTestClientUtils.getAndVerifyDiaryEntry(client, diaryEntry.getId(), HttpStatus.OK);
     }
 
     @Test
@@ -96,7 +63,7 @@ public class DiaryControllerTest {
         diaryEntry2.setUsername(USERNAME);
 
         // Act  & Assert
-        WebTestClientUtils.getByDateAndVerifyDiaryEntry(client, myJwt, HttpStatus.OK, TestUtils.DIARY_DATE, 1);
+        WebTestClientUtils.getByDateAndVerifyDiaryEntry(client, HttpStatus.OK, TestUtils.DIARY_DATE, 1);
     }
 
     @Test
@@ -108,19 +75,7 @@ public class DiaryControllerTest {
         DiaryEntry updatedDiary = (DiaryEntry) diaryEntry.clone();
 
         // Act  & Assert
-        WebTestClientUtils.putAndVerifyDiaryEntry(client, myJwt, diaryEntry.getId(), updatedDiary, HttpStatus.OK);
-    }
-
-    @Test
-    public void updateDiaryEntryUnauthenticated() throws CloneNotSupportedException {
-        // Arrange
-        DiaryEntry diaryEntry = TestUtils.createDiaryEntryForTest();
-        diaryEntry = diaryEntryRepository.save(diaryEntry);
-
-        DiaryEntry updatedDiary = (DiaryEntry) diaryEntry.clone();
-
-        // Act  & Assert
-        WebTestClientUtils.putAndVerifyDiaryEntry(client, diaryEntry.getId(), updatedDiary);
+        WebTestClientUtils.putAndVerifyDiaryEntry(client, diaryEntry.getId(), updatedDiary, HttpStatus.OK);
     }
 
     @Test
@@ -130,16 +85,6 @@ public class DiaryControllerTest {
         diaryEntry = diaryEntryRepository.save(diaryEntry);
 
         // Act & Assert
-        WebTestClientUtils.deleteDiaryEntry(client, myJwt, diaryEntry.getId(), HttpStatus.NO_CONTENT);
-    }
-
-    @Test
-    public void deleteDiaryEntryUnauthenticated() {
-        // Arrange
-        DiaryEntry diaryEntry = TestUtils.createDiaryEntryForTest();
-        diaryEntry = diaryEntryRepository.save(diaryEntry);
-
-        // Act & Assert
-        WebTestClientUtils.deleteDiaryEntry(client, diaryEntry.getId());
+        WebTestClientUtils.deleteDiaryEntry(client, diaryEntry.getId(), HttpStatus.NO_CONTENT);
     }
 }

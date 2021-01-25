@@ -21,10 +21,4 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 
-okta:
-  oauth2:
-    issuer: https://dev-961527.okta.com/oauth2/default
-    client-id: clientId
-    client-secret: clientSecret
-
 
